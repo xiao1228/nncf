@@ -86,7 +86,7 @@ class OVWeightCompressionAlgoBackend(WeightCompressionAlgoBackend):
         if mode == CompressWeightsMode.NF4:
             _assign_mixed_precision(all_weight_params, ratio, group_size)
 
-        for wp in all_weight_params:
+        for i, wp in enumerate(all_weight_params):
             weight_node = wp.weight_node
             original_weight_dtype = wp.original_weight_dtype
 
@@ -105,6 +105,13 @@ class OVWeightCompressionAlgoBackend(WeightCompressionAlgoBackend):
                 mul = opset.multiply(convert, scale.astype(original_weight_dtype), name=wp.fq_name)
                 if config.group_size != -1:
                     mul = opset.reshape(mul, output_shape=original_shape, special_zero=False)
+                last_output = mul.output(0)
+            elif config.is_nf4 is False and i == 0 or i == len(all_weight_params)-1:
+                compressed_weights, scale, zero_point = _int8_compress(weight, wp.reduction_axes)
+                compressed_const = opset.constant(compressed_weights, dtype=np.uint8, name=weight_name)
+                convert = opset.convert(compressed_const, original_weight_dtype)
+                sub = opset.subtract(convert, zero_point.astype(original_weight_dtype))
+                mul = opset.multiply(sub, scale.astype(original_weight_dtype), name=wp.fq_name)
                 last_output = mul.output(0)
             else:
                 compressed_weights, scale, zero_point = _int4_compress(weight, wp.reduction_axes)
@@ -194,6 +201,29 @@ def _int4_compress(
     :return: compressed weights in unsigned int8, scale and zero point that was used for its quantization.
     """
     num_bits = 4
+    level_low = 0
+    level_high = 2**num_bits - 1
+
+    min_values = np.min(weight, axis=reduction_axes, keepdims=True)
+    max_values = np.max(weight, axis=reduction_axes, keepdims=True)
+
+    scale, zero_point = calculate_scale_zero_point(min_values, max_values, level_low, level_high, narrow_range=False)
+
+    compressed_weights = np.round(weight / scale + zero_point)
+    compressed_weights = np.clip(compressed_weights, level_low, level_high).astype(np.uint8)
+    return compressed_weights, scale, zero_point
+
+def _int8_compress(
+    weight: np.ndarray, reduction_axes: Union[int, Tuple[int]]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Do unsigned int8 asymmetric weight compression - quantization to [0, 255] range.
+
+    :param weight: Weight array to compress
+    :param reduction_axes: Axis or axes along which to reduce (collect) different statistics (e.g. min, max).
+    :return: compressed weights in unsigned int8, scale and zero point that was used for its quantization.
+    """
+    num_bits = 8
     level_low = 0
     level_high = 2**num_bits - 1
 
