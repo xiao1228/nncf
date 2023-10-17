@@ -107,8 +107,9 @@ class OVWeightCompressionAlgoBackend(WeightCompressionAlgoBackend):
                     mul = opset.reshape(mul, output_shape=original_shape, special_zero=False)
                 last_output = mul.output(0)
             else:
-                compressed_weights, scale, zero_point = _int8_compress(weight, wp.reduction_axes)
-                compressed_const = opset.constant(compressed_weights, dtype=np.uint8, name=weight_name)
+                compressed_weights, scale, zero_point = _int4_compress(weight, wp.reduction_axes)
+                from openvino.runtime import Type
+                compressed_const = opset.constant(compressed_weights, dtype=Type.u4, name=weight_name)
                 convert = opset.convert(compressed_const, original_weight_dtype)
                 sub = opset.subtract(convert, zero_point.astype(original_weight_dtype))
                 mul = opset.multiply(sub, scale.astype(original_weight_dtype), name=wp.fq_name)
@@ -182,7 +183,7 @@ class WeightNodeParams:
     compression_config = WeightCompressionConfig()
 
 
-def _int8_compress(
+def _int4_compress(
     weight: np.ndarray, reduction_axes: Union[int, Tuple[int]]
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -192,7 +193,7 @@ def _int8_compress(
     :param reduction_axes: Axis or axes along which to reduce (collect) different statistics (e.g. min, max).
     :return: compressed weights in unsigned int8, scale and zero point that was used for its quantization.
     """
-    num_bits = 8
+    num_bits = 4
     level_low = 0
     level_high = 2**num_bits - 1
 
@@ -206,7 +207,7 @@ def _int8_compress(
     return compressed_weights, scale, zero_point
 
 
-def _get_int8_err(weight: np.ndarray, reduction_axes: Union[int, Tuple[int]]) -> float:
+def _get_int4_err(weight: np.ndarray, reduction_axes: Union[int, Tuple[int]]) -> float:
     """
     Calculates a quantity characterizing the difference between floating point weights and its int8 fake quantized
     (compressed and decompressed) version.
@@ -215,7 +216,7 @@ def _get_int8_err(weight: np.ndarray, reduction_axes: Union[int, Tuple[int]]) ->
     :param reduction_axes: Axis or axes along which to reduce (collect) different statistics (e.g. min, max).
     :return: The quantity characterizing the int8 error.
     """
-    compressed_weights, scale, zero_point = _int8_compress(weight, reduction_axes)
+    compressed_weights, scale, zero_point = _int4_compress(weight, reduction_axes)
 
     decompressed_weight = compressed_weights.astype(dtype=scale.dtype)
     decompressed_weight = (compressed_weights - zero_point) * scale
@@ -370,7 +371,7 @@ def _assign_mixed_precision(all_weight_params: List[WeightNodeParams], ratio: fl
             weight = get_const_value(weight_param.weight_node)
             axes = weight_param.reduction_axes
             nf4_error = _get_nf4_error(weight, axes, group_size)
-            int8_error = _get_int8_err(weight, axes)
+            int8_error = _get_int4_err(weight, axes)
             eps = np.finfo(weight.dtype).eps
             error = nf4_error / (int8_error + eps)
             errors.append(error)
