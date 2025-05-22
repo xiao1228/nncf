@@ -702,6 +702,8 @@ def create_ov_codebook_subgraph(
     codebook_const = opset.constant(codebook.data, dtype=codebook_dtype)
     if codebook_dtype != ov.Type.f16:
         codebook_const = opset.convert(codebook_const, destination_type=ov.Type.f16)
+        one_const = opset.constant(1.0, dtype=ov.Type.f16) 
+        codebook_const = opset.multiply(codebook_const, one_const)
 
     codebook_indexes = opset.constant(indexes.data, dtype=dtype)
     if dtype == ov.Type.u4:
