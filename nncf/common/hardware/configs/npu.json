@@ -1,9 +1,14 @@
 {
-    "target_device": "NPU",
+    "target_device": "CPU",
     "config": {
         "quantization": {
             "q8_a_sym": {
-                "bits": 8,
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
                 "mode": [
                     "symmetric"
                 ],
@@ -11,7 +16,12 @@
                 "narrow_range": false
             },
             "q8_a": {
-                "bits": 8,
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
                 "mode": [
                     "symmetric",
                     "asymmetric"
@@ -20,7 +30,12 @@
                 "narrow_range": false
             },
             "q8_a_ch": {
-                "bits": 8,
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
                 "mode": [
                     "symmetric",
                     "asymmetric"
@@ -32,55 +47,46 @@
                 "narrow_range": false
             },
             "q8_w_sym": {
-                "bits": 8,
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
                 "mode": "symmetric",
                 "signedness_to_force": true,
-                "granularity": ["perchannel", "pertensor"],
-                "narrow_range": true
-            },
-            "q8_w_sym_any_nr": {
-                "bits": 8,
-                "mode": "symmetric",
-                "signedness_to_force": true,
-                "granularity": ["perchannel", "pertensor"],
-                "narrow_range": [true, false]
-            },
-            "q8_w_asym": {
-                "bits": 8,
-                "mode": "asymmetric",
-                "granularity": ["perchannel", "pertensor"],
-                "narrow_range": false
-            },
-            "q4_tn": {
-                "bits": 4,
-                "mode": "symmetric",
-                "granularity": "pertensor",
-                "narrow_range": false
-            },
-            "q4_ch": {
-                "bits": 4,
-                "mode": "symmetric",
-                "granularity": "perchannel",
-                "narrow_range": false
-            },
-            "q4_w": {
-                "bits": 4,
-                "mode": "symmetric",
                 "granularity": [
                     "perchannel",
                     "pertensor"
                 ],
-                "narrow_range": false
+                "narrow_range": true
             },
-            "q2_ch": {
-                "bits": 2,
+            "q8_w_sym_any_nr": {
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
                 "mode": "symmetric",
-                "granularity": "perchannel",
-                "narrow_range": false
+                "signedness_to_force": true,
+                "granularity": [
+                    "perchannel",
+                    "pertensor"
+                ],
+                "narrow_range": [
+                    true,
+                    false
+                ]
             },
-            "q2_w": {
-                "bits": 2,
-                "mode": "symmetric",
+            "q8_w_asym": {
+                "bits": [
+                    2,
+                    4,
+                    8,
+                    16
+                ],
+                "mode": "asymmetric",
                 "granularity": [
                     "perchannel",
                     "pertensor"
@@ -92,193 +98,205 @@
     "operations": [
         {
             "type": "Convolution",
-            "attributes": {
-                "adjust_padding": true
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_w", "q2_w"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "DepthWiseConvolution",
             "quantization": {
-                "activations": ["q8_a_ch", "q8_a"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_w", "q2_w"]
+                "activations": [
+                    "q8_a_ch",
+                    "q8_a"
+                ],
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "MatMul",
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_w", "q2_w"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Add",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_tn"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Multiply",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_tn"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Maximum",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_tn"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Less",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "LessEqual",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Greater",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "GreaterEqual",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Divide",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Minimum",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_tn"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Equal",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "Subtract",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
-                "activations": ["q8_a", "q4_tn"],
-                "weights": ["q8_w_sym", "q8_w_asym", "q4_tn"]
+                "activations": "q8_a",
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "NotEqual",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "FloorMod",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "LogicalOr",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "LogicalXor",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "LogicalAnd",
-            "attributes": {
-                "scales": "unified"
-            },
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
             "type": "LogicalNot",
             "quantization": {
                 "activations": "q8_a",
-                "weights": ["q8_w_sym", "q8_w_asym"]
+                "weights": [
+                    "q8_w_sym",
+                    "q8_w_asym"
+                ]
             }
         },
         {
@@ -319,17 +337,8 @@
         },
         {
             "type": "Interpolate",
-            "attributes": {
-                "mode": "linear"
-            },
             "quantization": {
                 "activations": "q8_a"
-            }
-        },
-        {
-            "type": "Interpolate",
-            "attributes": {
-                "mode": "nearest"
             }
         },
         {
@@ -376,36 +385,62 @@
                 "activations": "q8_a_sym"
             }
         },
-        {"type": "Reshape"},
-        {"type": "Flatten"},
-        {"type": "Squeeze"},
-        {"type": "Unsqueeze"},
-        {"type": "Split"},
-        {"type": "VariadicSplit"},
-        {"type": "Crop"},
-        {"type": "Transpose"},
-        {"type": "Tile"},
-        {"type": "StridedSlice"},
-        {"type": "Slice"},
-        {"type": "ShuffleChannels"},
-        {"type": "Broadcast"},
-        {"type": "Pad"},
-        {"type": "ConvertLike"},
+        {
+            "type": "Reshape"
+        },
+        {
+            "type": "Flatten"
+        },
+        {
+            "type": "Squeeze"
+        },
+        {
+            "type": "Unsqueeze"
+        },
+        {
+            "type": "Split"
+        },
+        {
+            "type": "VariadicSplit"
+        },
+        {
+            "type": "Crop"
+        },
+        {
+            "type": "Transpose"
+        },
+        {
+            "type": "Tile"
+        },
+        {
+            "type": "StridedSlice"
+        },
+        {
+            "type": "Slice"
+        },
+        {
+            "type": "ShuffleChannels"
+        },
+        {
+            "type": "Broadcast"
+        },
+        {
+            "type": "Pad"
+        },
+        {
+            "type": "ConvertLike"
+        },
         {
             "type": "Embedding",
             "quantization": {
                 "weights": [
-                    "q8_w_sym_any_nr", "q8_w_asym"
+                    "q8_w_sym_any_nr",
+                    "q8_w_asym"
                 ]
             }
         },
         {
-            "type": "EmbeddingBag",
-            "quantization": {
-                "weights": [
-                    "q8_w_sym_any_nr", "q8_w_asym"
-                ]
-            }
+            "type": "EmbeddingBag"
         }
     ]
 }
