@@ -148,10 +148,10 @@ def calculate_float_quantization_params(
 
     if config.mode == CompressWeightsMode.E2M1:
         scale = scale / max_val
-        scale = fns.log2(scale)
-        scale = fns.ceil(scale)
-        scale = fns.clip(scale, -127, 127)
-        scale = 2**scale
+    #     scale = fns.log2(scale)
+    #     scale = fns.ceil(scale)
+    #     scale = fns.clip(scale, -127, 127)
+    #     scale = 2**scale
 
     return scale
 
